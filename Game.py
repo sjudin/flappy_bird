@@ -11,14 +11,14 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=20, dx=0, dy=0, ddx=0, ddy=0.3)
+        self.bird = Bird(x=100, y=20, dx=0, dy=0, ddx=0, ddy=0.4)
 
         # Game clock
         self.clock = pygame.time.Clock()
         self.fps = 90
 
         self.key = {
-            pygame.K_SPACE: (0, -5)
+            pygame.K_SPACE: (0, -7)
         }
 
         # Background image
@@ -63,15 +63,15 @@ class FlappyBird:
     # Keeps track of all conditions for a game over
     def game_over(self):
         
-
+        # Check if bird falls down
         if self.bird.y > self.width:
             return True
 
+        # Check collision with pipe
         for pipe_pair in self.pipes:
             if pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height).collidepoint(self.bird.x + 25, self.bird.y + 25) or pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height).collidepoint(self.bird.x + 25, self.bird.y + 25):
                 return True
             
-
         else:
             return False
 
@@ -104,14 +104,13 @@ class FlappyBird:
             pygame.display.flip()
             self.clock.tick(self.fps)
 
-            if counter == 100:
-                rand = random.randint(100,300)
+            if counter == 80:
+                rand = random.randint(100,500)
                 self.pipes.append(PipePair(rand, 3))
                 counter = 0
             
 
             counter += 1
-            print(self.score)
 
 
 
@@ -134,7 +133,7 @@ class Bird:
 
 # Keeps track of pipe position
 class Pipe:
-    def __init__(self, x, dx, height, width=75, y=0, dy=0):
+    def __init__(self, x, dx, height, width=90, y=0, dy=0):
         # y coordinates do not matter
         self.x = x
         self.y = y
@@ -150,8 +149,8 @@ class Pipe:
 class PipePair:
     def __init__(self, centerpos, dx):
         self.x = 1024
-        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 60)
-        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 60)
+        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 50)
+        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 50)
         self.width = self.upper.width
         
 
