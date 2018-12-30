@@ -27,6 +27,7 @@ class FlappyBird:
         
         # Bird image
         self.bird_image = pygame.transform.scale(pygame.image.load("assets/bird.png"), (55,38)).convert_alpha()
+        self.bird_rect = self.bird_image.get_rect(x=self.bird.x, y=self.bird.y)
 
         # Pipe images
         self.pipe_image_lower = pygame.image.load("assets/pipe_long.png").convert_alpha()
@@ -49,15 +50,16 @@ class FlappyBird:
         self.screen.fill(black)
         self.screen.blit(self.background, (0,0))
 
-        # Move bird and redraw
+        # Move bird and redraw, also update bird rectangle for collision detection
         self.bird.move()
         self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
+        temp = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
+
+        # Make bird_rect a bit smaller than the actual bird
+        self.bird_rect = pygame.Rect(temp.left + 10, temp.top + 5, temp.width - 10, temp.height - 10)
+        # Draw collision box for clearer view
+        #pygame.draw.rect(self.screen,black, self.bird_rect)
         
-        #bird_rect = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
-        #pygame.draw.rect(self.screen,black, self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y)))
-        #bird_rect = pygame.Rect(bird_rect.left + 10, bird_rect.top + 5, bird_rect.width - 10, bird_rect.height - 5)
-        #pygame.draw.rect(self.screen,black, bird_rect)
-        #pygame.draw.ellipse(self.screen, black, self.bird_image.get_rect(x=round(self.bird.x + 5), y=round(self.bird.y + 5)))
 
     def update_pipes(self):
         for pipe_pair in self.pipes:
@@ -67,16 +69,19 @@ class FlappyBird:
             self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
             self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, 500)), (pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
 
-            #pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
-            #pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
-
-
             # Draw tops of pipes
             self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.upper.height - 50))
             self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.lower.height))
 
+            # Draw collision rectangles for pipes
+            #pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
+            #pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
+
             #pygame.draw.rect(self.screen, black, self.pipe_top.get_rect(x=pipe_pair.x, y=pipe_pair.upper.height - 50))
             #pygame.draw.rect(self.screen, black, self.pipe_top.get_rect(x=pipe_pair.x, y=pipe_pair.lower.height))
+
+
+
             
 
     def update_score(self):
@@ -103,15 +108,10 @@ class FlappyBird:
             lower_pipe = pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height)
 
             l = [upper_top, lower_top, upper_pipe, lower_pipe]
-
-            bird_rect = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
-            bird_rect = pygame.Rect(bird_rect.left + 10, bird_rect.top + 5, bird_rect.width - 10, bird_rect.height - 5)
-
-            if bird_rect.collidelist(l) > -1:
+            
+            # Has the birds rectagle collided with any pipes?
+            if self.bird_rect.collidelist(l) > -1:
                 return True
-
-            #if pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height).collidepoint(self.bird.x + 25, self.bird.y + 25) or pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height).collidepoint(self.bird.x + 25, self.bird.y + 25):
-            #    return True
             
         else:
             return False
@@ -240,5 +240,5 @@ class PipePair:
         self.x -= self.upper.dx
 
 
-test = FlappyBird()
-test.run()
+game = FlappyBird()
+game.run()
