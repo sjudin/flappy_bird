@@ -1,4 +1,5 @@
 import sys, pygame, time, random
+pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 
 
@@ -25,20 +26,23 @@ class FlappyBird:
         self.background = pygame.image.load("assets/background.png").convert_alpha()
         
         # Bird image
-        self.bird_image = pygame.transform.scale(pygame.image.load("assets/bird.png"), (50,50)).convert_alpha()
-        # Game over image
-        self.game_over_image = pygame.image.load("assets/game_over.png")
+        self.bird_image = pygame.transform.scale(pygame.image.load("assets/bird.png"), (55,38)).convert_alpha()
 
+        # Pipe images
         self.pipe_image_lower = pygame.image.load("assets/pipe_long.png").convert_alpha()
-        self.pipe_image_upper = pygame.transform.flip(pygame.image.load("assets/pipe_long.png"), False, True).convert_alpha()
         self.pipe_top = pygame.transform.scale(pygame.image.load("assets/pipe_top.png"), (75,50)).convert_alpha()
 
+        #Initial pipe
         self.pipes = [PipePair(100, 3)]
 
         self.score = 0
         self.font = pygame.font.Font("assets/ARCADE.TTF", 72)
 
-        self.is_alive = True
+        self.sounds = {
+            'jump': pygame.mixer.Sound("assets/jump.wav"),
+            'death': pygame.mixer.Sound("assets/death.wav"),
+            'score': pygame.mixer.Sound("assets/score.wav"),
+        }
 
     def update_bird(self):
         # Draw background
@@ -48,24 +52,38 @@ class FlappyBird:
         # Move bird and redraw
         self.bird.move()
         self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
+        
+        #bird_rect = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
+        #pygame.draw.rect(self.screen,black, self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y)))
+        #bird_rect = pygame.Rect(bird_rect.left + 10, bird_rect.top + 5, bird_rect.width - 10, bird_rect.height - 5)
+        #pygame.draw.rect(self.screen,black, bird_rect)
+        #pygame.draw.ellipse(self.screen, black, self.bird_image.get_rect(x=round(self.bird.x + 5), y=round(self.bird.y + 5)))
 
     def update_pipes(self):
         for pipe_pair in self.pipes:
             pipe_pair.move()
 
             # Draw longer part of pipe
-            self.screen.blit(pygame.transform.scale(self.pipe_image_upper, (75, pipe_pair.upper.height)), (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
+            self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
             self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, 500)), (pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
+
+            #pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
+            #pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
+
 
             # Draw tops of pipes
             self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.upper.height - 50))
             self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.lower.height))
+
+            #pygame.draw.rect(self.screen, black, self.pipe_top.get_rect(x=pipe_pair.x, y=pipe_pair.upper.height - 50))
+            #pygame.draw.rect(self.screen, black, self.pipe_top.get_rect(x=pipe_pair.x, y=pipe_pair.lower.height))
             
 
     def update_score(self):
         for pipe_pair in self.pipes:
             if self.bird.x == pipe_pair.x:
                 self.score += 1
+                self.sounds['score'].play()
 
         text = self.font.render(str(self.score), False, black)
         self.screen.blit(text, (self.width/2,50, 100, 200))
@@ -79,8 +97,21 @@ class FlappyBird:
 
         # Check collision with pipe
         for pipe_pair in self.pipes:
-            if pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height).collidepoint(self.bird.x + 25, self.bird.y + 25) or pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height).collidepoint(self.bird.x + 25, self.bird.y + 25):
+            upper_top = pygame.Rect(self.pipe_top.get_rect(x=pipe_pair.x, y=pipe_pair.upper.height - 50))
+            lower_top = pygame.Rect(self.pipe_top.get_rect(x=pipe_pair.x, y=pipe_pair.lower.height))
+            upper_pipe = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
+            lower_pipe = pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height)
+
+            l = [upper_top, lower_top, upper_pipe, lower_pipe]
+
+            bird_rect = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
+            bird_rect = pygame.Rect(bird_rect.left + 10, bird_rect.top + 5, bird_rect.width - 10, bird_rect.height - 5)
+
+            if bird_rect.collidelist(l) > -1:
                 return True
+
+            #if pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height).collidepoint(self.bird.x + 25, self.bird.y + 25) or pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height).collidepoint(self.bird.x + 25, self.bird.y + 25):
+            #    return True
             
         else:
             return False
@@ -99,11 +130,25 @@ class FlappyBird:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
+                    self.sounds['jump'].play()
                     self.bird.dx, self.bird.dy = self.key.get(event.key, (self.bird.dx,self.bird.dy))
                 
             # Game over
             if self.game_over():
-                #self.screen.blit(self.game_over_image, ((self.width - self.game_over_image.get_width())/2, (self.height - self.game_over_image.get_height())/2))
+                # Bird falls down to signal game over
+                self.sounds['death'].play()
+                while self.bird.y < self.height:
+                    self.update_bird()
+                    for pipe_pair in self.pipes:
+                        pipe_pair.lower.dx = 0
+                        pipe_pair.upper.dx = 0
+                    self.update_pipes()
+
+                    pygame.display.flip()
+                    self.clock.tick(self.fps)
+
+
+
                 text = self.font.render('Game over, play again? y/n', False, black)
                 text_rect = text.get_rect(center=(self.width/2, self.height/2))
                 self.screen.blit(text, text_rect)
@@ -111,10 +156,11 @@ class FlappyBird:
                 pygame.display.flip()
                 self.clock.tick(self.fps)
 
+                # Wait for player to start again or shut down
                 while 1:
                     event = pygame.event.wait()
                     if event.type == pygame.KEYDOWN:
-                        if event == pygame.QUIT or event.key == pygame.K_n:
+                        if event.key == pygame.K_n:
                             pygame.quit()
                             sys.exit()
                         elif event.key == pygame.K_y:
@@ -125,6 +171,10 @@ class FlappyBird:
                         else:
                             pass
 
+                    elif event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+
 
             
             # Continue game loop
@@ -134,6 +184,7 @@ class FlappyBird:
             pygame.display.flip()
             self.clock.tick(self.fps)
 
+            # Spawn a new pipe every 80 frames
             if counter == 80:
                 rand = random.randint(100,500)
                 self.pipes.append(PipePair(rand, 3))
@@ -141,7 +192,6 @@ class FlappyBird:
             
 
             counter += 1
-            # print(self.clock.get_fps())
 
 
 # Keeps track of bird positions
@@ -179,8 +229,8 @@ class Pipe:
 class PipePair:
     def __init__(self, centerpos, dx):
         self.x = 1024
-        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 50)
-        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 50)
+        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 70)
+        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 70)
         self.width = self.upper.width
         
 
