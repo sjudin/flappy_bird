@@ -12,7 +12,7 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=20, dx=0, dy=0, ddx=0, ddy=0.4)
+        self.bird = Bird(x=100, y=100, dx=0, dy=0, ddx=0, ddy=0.4)
 
         # Game clock
         self.clock = pygame.time.Clock()
@@ -97,7 +97,7 @@ class FlappyBird:
     def game_over(self):
         
         # Check if bird falls down
-        if self.bird.y > self.width:
+        if self.bird.y > self.width or self.bird.y < 0:
             return True
 
         # Check collision with pipe
