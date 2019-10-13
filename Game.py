@@ -131,7 +131,6 @@ class FlappyBird:
             self.sounds['jump'].play()
             self.bird.dx, self.bird.dy = self.key.get(pygame.K_SPACE, (self.bird.dx,self.bird.dy))
             
-        
         # Continue game loop
         self.state = []
         self.update_bird()
