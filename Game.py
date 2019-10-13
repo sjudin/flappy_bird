@@ -1,7 +1,11 @@
-import sys, pygame, time, random
+import pygame
+import sys, os, time
+import random 
+
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
-
 
 black = [0, 0, 0]
 class FlappyBird:
@@ -53,16 +57,13 @@ class FlappyBird:
 
     def update_bird(self):
         # Draw background
-        self.screen.fill(black)
-        self.screen.blit(self.background, (0,0))
+        # self.screen.fill(black)
+        # self.screen.blit(self.background, (0,0))
 
         # Move bird and redraw, also update bird rectangle for collision detection
         self.bird.move()
-        self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
+        # self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
         temp = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
-
-        # print('x: ', [pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:2])
-        # print('y: ', [pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:2])
 
         # Make bird_rect a bit smaller than the actual bird
         self.bird_rect = pygame.Rect(temp.left + 10, temp.top + 5, temp.width - 10, temp.height - 10)
@@ -75,12 +76,12 @@ class FlappyBird:
             pipe_pair.move()
 
             # Draw longer part of pipe
-            self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
-            self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, 500)), (pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
+            # self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
+            # self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, 500)), (pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
 
-            # Draw tops of pipes
-            self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.upper.height - 50))
-            self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.lower.height))
+            # # Draw tops of pipes
+            # self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.upper.height - 50))
+            # self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.lower.height))
 
             # Draw collision rectangles for pipes
             # pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
@@ -95,8 +96,8 @@ class FlappyBird:
                 self.score += 1
                 self.sounds['score'].play()
 
-        text = self.font.render(str(self.score), False, black)
-        self.screen.blit(text, (self.width/2,50, 100, 200))
+        # text = self.font.render(str(self.score), False, black)
+        # self.screen.blit(text, (self.width/2,50, 100, 200))
 
     # Keeps track of all conditions for a game over
     def game_over(self):
@@ -202,22 +203,23 @@ class PipePair:
         self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 70, dy=dy)
         self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 70, dy=dy)
         self.width = self.upper.width
-        
 
     def move(self):
         self.upper.move()
         self.lower.move()
         self.x -= self.upper.dx
-        
 
 
 if __name__ == '__main__':
     game = FlappyBird()
+
     import itertools
+    t = time.time()
     for i in itertools.count():
         k = game.step(1) if i%32==0 else game.step(0)
         if k[2]:
             print(k)
+            print(time.time()-t)
             sys.exit()
         else:
             print(k)
