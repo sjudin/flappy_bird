@@ -39,6 +39,15 @@ class FlappyBird:
         self.pipes = []
         self.pipe_rects = []
 
+        pipe_pair = PipePair(random.randint(100,500), 3, dy=1)
+        self.pipes.append(pipe_pair)
+
+        upper_pipe_rect = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
+        lower_pipe_rect = pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height)
+
+        # Append corresponding PipePair rects
+        self.pipe_rects.append((upper_pipe_rect, lower_pipe_rect))
+
         self.score = 0
         self.font = pygame.font.Font("assets/ARCADE.TTF", 72)
 
@@ -52,6 +61,13 @@ class FlappyBird:
 
         self.terminal_state = False
         self.state = []
+
+        # Update states
+        self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
+
+        # Initial set of pipes, (none on screen)
+        self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
+        self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
 
     def update_bird(self):
         # Draw background
@@ -139,8 +155,8 @@ class FlappyBird:
 
         # Update states
         self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
-        self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:2])
-        self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:2])
+        self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
+        self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
 
         # Game over
         self.terminal_state = self.game_over()
