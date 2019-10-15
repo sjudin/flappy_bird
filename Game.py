@@ -2,14 +2,15 @@ import pygame
 import sys, os, time
 import random 
 
-os.environ["SDL_VIDEODRIVER"] = "dummy"
+# os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 pygame.mixer.pre_init(44100, -16, 1, 512)
-pygame.init()
-
 black = [0, 0, 0]
+
 class FlappyBird:
     def __init__(self):
+        pygame.init()
+        self.render_graphics = True
 
         # screen for game to play on
         self.size = self.width, self.height = 1024, 576
@@ -21,17 +22,16 @@ class FlappyBird:
         # Game clock
         self.fps = 60
 
-        self.key = {
-            pygame.K_SPACE: (0, -6),
-            # pygame.K_b: (-3, -6)
-        }
-
         # Background image
-        self.background = pygame.image.load("assets/background.png").convert_alpha()
+        if self.render_graphics:
+            self.background = pygame.image.load("assets/background.png").convert_alpha()
         
+        # Bird rectangle for collision detection
+        self.bird_rect = pygame.Rect(self.bird.x, self.bird.y, 50, 30)
+
         # Bird image
-        self.bird_image = pygame.transform.scale(pygame.image.load("assets/bird.png"), (55,38)).convert_alpha()
-        self.bird_rect = self.bird_image.get_rect(x=self.bird.x, y=self.bird.y)
+        if self.render_graphics:
+            self.bird_image = pygame.transform.scale(pygame.image.load("assets/bird.png"), (55,38)).convert_alpha()
 
         # Pipe images
         self.pipe_image_lower = pygame.image.load("assets/pipe_long.png").convert_alpha()
@@ -46,7 +46,7 @@ class FlappyBird:
         self.sounds = {
             'jump': pygame.mixer.Sound("assets/jump.wav"),
             'death': pygame.mixer.Sound("assets/death.wav"),
-            # 'score': pygame.mixer.Sound("assets/RIP.wav"),
+            # 'jump': pygame.mixer.Sound("assets/RIP.wav"),
             'score': pygame.mixer.Sound("assets/score.wav")
         }
 
@@ -57,31 +57,39 @@ class FlappyBird:
 
     def update_bird(self):
         # Draw background
-        # self.screen.fill(black)
-        # self.screen.blit(self.background, (0,0))
+        if self.render_graphics:
+            self.screen.fill(black)
+            self.screen.blit(self.background, (0,0))
 
         # Move bird and redraw, also update bird rectangle for collision detection
+        old_x, old_y = self.bird.x, self.bird.y
         self.bird.move()
-        # self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
-        temp = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
+
+        if self.render_graphics:
+            self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
+
+        # temp = self.bird_image.get_rect(x=round(self.bird.x), y=round(self.bird.y))
 
         # Make bird_rect a bit smaller than the actual bird
-        self.bird_rect = pygame.Rect(temp.left + 10, temp.top + 5, temp.width - 10, temp.height - 10)
+        # self.bird_rect = pygame.Rect(temp.left + 10, temp.top + 5, temp.width - 10, temp.height - 10)
+        self.bird_rect.move_ip(self.bird.x - old_x, self.bird.y - old_y)
         # Draw collision box for clearer view
-        # pygame.draw.rect(self.screen,black, self.bird_rect)
+        pygame.draw.rect(self.screen,black, self.bird_rect)
         
 
     def update_pipes(self):
         for pipe_pair in self.pipes:
             pipe_pair.move()
 
-            # Draw longer part of pipe
-            # self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
-            # self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, 500)), (pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
+            if self.render_graphics:
+                # Draw longer part of pipe
+                self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), \
+                                (pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height))
+                self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, 500)), (pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
 
-            # # Draw tops of pipes
-            # self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.upper.height - 50))
-            # self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.lower.height))
+                # # Draw tops of pipes
+                self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.upper.height - 50))
+                self.screen.blit(self.pipe_top, (pipe_pair.x, pipe_pair.lower.height))
 
             # Draw collision rectangles for pipes
             # pygame.draw.rect(self.screen, black, pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height))
@@ -128,8 +136,9 @@ class FlappyBird:
 
         # If action is 1, we jump
         if action == 1:
-            self.sounds['jump'].play()
-            self.bird.dx, self.bird.dy = self.key.get(pygame.K_SPACE, (self.bird.dx,self.bird.dy))
+            if self.render_graphics:
+                self.sounds['jump'].play()
+            self.bird.dx, self.bird.dy = (0, -6)
             
         # Continue game loop
         self.state = []
@@ -139,7 +148,7 @@ class FlappyBird:
         pygame.display.flip()
 
         # Update states
-        self.state.append([self.bird.x, self.bird.y])
+        self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
         self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:2])
         self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:2])
 
@@ -210,16 +219,16 @@ class PipePair:
 
 
 if __name__ == '__main__':
-    game = FlappyBird()
-
     import itertools
-    t = time.time()
-    for i in itertools.count():
-        k = game.step(1) if i%32==0 else game.step(0)
-        if k[2]:
-            print(k)
-            print(time.time()-t)
-            sys.exit()
-        else:
-            print(k)
+    for episode in range(2):
+        print("Episode: {}".format(episode))
+        game = FlappyBird()
+        t = time.time()
 
+        for i in itertools.count():
+            k = game.step(1) if i%32==0 else game.step(0)
+            if k[2]:
+                print(k)
+                print(time.time()-t)
+                del game
+                break
