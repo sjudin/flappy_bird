@@ -63,9 +63,9 @@ class FlappyBird:
         self.state = []
 
         # Update states
-        self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
+        self.state.extend([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
 
-        # Initial set of pipes, (none on screen)
+        # Initial set of pipes
         self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
         self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
 
@@ -138,8 +138,6 @@ class FlappyBird:
         return False
 
     def step(self, action):
-        rand = random.randint(150,400)
-
         # If action is 1, we jump
         if action == 1:
             if self.render_graphics:
@@ -154,7 +152,7 @@ class FlappyBird:
         pygame.display.flip()
 
         # Update states
-        self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
+        self.state.extend([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
         self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
         self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
 
@@ -227,19 +225,3 @@ class PipePair:
         self.upper.move()
         self.lower.move()
         self.x -= self.upper.dx
-
-
-if __name__ == '__main__':
-    import itertools
-    for episode in range(10):
-        print("Episode: {}".format(episode))
-        game = FlappyBird()
-        t = time.time()
-
-        for i in itertools.count():
-            k = game.step(1) if i%32==0 else game.step(0)
-            if k[2]:
-                print(k)
-                print(time.time()-t)
-                del game
-                break
