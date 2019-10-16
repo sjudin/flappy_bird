@@ -6,8 +6,8 @@ black = [0, 0, 0]
 
 class FlappyBird:
     def __init__(self):
-        self.render_graphics = True
-        self.sound_enabled = True
+        self.render_graphics = False
+        self.sound_enabled = False
         
         if not self.render_graphics:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -18,7 +18,7 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=100, dx=0, dy=0, ddx=0, ddy=0.4)
+        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=0.4)
 
         # Game clock
         self.fps = 60
@@ -39,7 +39,7 @@ class FlappyBird:
         self.pipes = []
         self.pipe_rects = []
 
-        pipe_pair = PipePair(random.randint(100,500), 3, dy=1)
+        pipe_pair = PipePair(300, 3, dy=1)
         self.pipes.append(pipe_pair)
 
         upper_pipe_rect = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
@@ -65,17 +65,15 @@ class FlappyBird:
         self.state = []
 
         # Update states
-        self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
+        self.state.append(self.bird.dy)
 
         # Initial set of pipes, (none on screen)
-        self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
-        self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
+        # self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
+        # self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
+        self.state.append([(pipe.x + pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        self.state.append([pipe.lower.height-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
 
     def update_bird(self):
-        # Draw background
-        if self.render_graphics:
-            self.screen.fill(black)
-            # self.screen.blit(self.background, (0,0))
 
         # Move bird and redraw, also update bird rectangle for collision detection
         old_x, old_y = self.bird.x, self.bird.y
@@ -83,16 +81,15 @@ class FlappyBird:
         self.bird_rect.move_ip(self.bird.x - old_x, self.bird.y - old_y)
 
         if self.render_graphics:
-            # self.screen.blit(self.bird_image, (round(self.bird.x), round(self.bird.y)))
+            # self.screen.blit(self.background, (0,0))
+            self.screen.fill(black)
             pygame.draw.rect(self.screen, (255, 255, 0), self.bird_rect)
 
-
-        # Draw bird collision box for debugging
         
 
     def update_pipes(self):
         for pipe_pair, pipe_pair_rects in zip(self.pipes, self.pipe_rects):
-            if pipe_pair.x < -75:
+            if pipe_pair.x < -pipe_pair.width:
                 self.pipes.remove(pipe_pair)
                 self.pipe_rects.remove(pipe_pair_rects)
                 continue
@@ -159,19 +156,20 @@ class FlappyBird:
         pygame.display.flip()
 
         # Update states
-        self.state.append([self.bird.x, self.bird.y, self.bird.dx, self.bird.dy])
-        self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
-        self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
+        self.state.append(self.bird.dy)
+        self.state.append([(pipe.x + pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        self.state.append([pipe.lower.height-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        # print(self.state)
 
         # Game over
         self.terminal_state = self.game_over()
         if self.terminal_state:
             # Bird falls down to signal game over
-            pygame.quit()
-            return self.state, -1, True
+            # pygame.quit()
+            return self.state, 0, True
 
         # Spawn a new pipe every 100 frames
-        if self.counter == 100:
+        if self.counter == 150:
             rand = random.randint(100,500)
             pipe_pair = PipePair(rand, 3, dy=1)
             self.pipes.append(pipe_pair)
@@ -186,7 +184,7 @@ class FlappyBird:
         self.counter += 1
 
         # Return current state, reward and terminal_state
-        return self.state, 0, False
+        return self.state, 1, False
 
 
 # Keeps track of bird positions
@@ -224,8 +222,8 @@ class PipePair:
     def __init__(self, centerpos, dx, dy=0, x=None):
         self.x = 1024 if x is None else x
         self.y = 0
-        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 70, dy=dy)
-        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 70, dy=dy)
+        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 80, dy=dy)
+        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 80, dy=dy)
         self.width = self.upper.width
 
     def move(self):
@@ -233,18 +231,13 @@ class PipePair:
         self.lower.move()
         self.x -= self.upper.dx
 
-
 if __name__ == '__main__':
     import itertools
-    for episode in range(10):
-        print("Episode: {}".format(episode))
+    while True:
+        # a = input("Input action")
         game = FlappyBird()
-        t = time.time()
-
         for i in itertools.count():
-            k = game.step(1) if i%32==0 else game.step(0)
+            time.sleep(0.01)
+            k = game.step(1) if i % 32 == 0 else game.step(0)
             if k[2]:
-                print(k)
-                print(time.time()-t)
-                del game
-                break
+                sys.exit()
