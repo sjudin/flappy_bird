@@ -94,8 +94,8 @@ def sample_batch_and_calculate_loss(ddqn, replay_buffer, batch_size, gamma):
 
 def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization=False, batch_size=64, gamma=.94):        
     Transition = namedtuple("Transition", ["s", "a", "r", "next_s", "t"])
-    eps = 0.001
-    eps_end = 0
+    eps = 0
+    eps_end = 0.00
     eps_decay = 0
     tau = 1000
     cnt_updates = 0
@@ -123,24 +123,23 @@ def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization
             # Assess whether terminal state was reached.
             nonterminal_to_buffer = not finish_episode
             
-            if steps % 15 == 0:
-                # Store experienced transition to replay buffer
-                replay_buffer.add(Transition(s=state, a=curr_action, r=reward, next_s=new_state, t=nonterminal_to_buffer))
+            # Store experienced transition to replay buffer
+            replay_buffer.add(Transition(s=state, a=curr_action, r=reward, next_s=new_state, t=nonterminal_to_buffer))
 
             state = new_state
             ep_reward += reward
-            
+             
             # If replay buffer contains more than 1000 samples, perform one training step
-            if replay_buffer.buffer_length > 1000:
-                
-                loss = sample_batch_and_calculate_loss(ddqn, replay_buffer, batch_size, gamma)
-                ddqn.optimizer.zero_grad()
-                loss.backward()
-                ddqn.optimizer.step()
+            # if replay_buffer.buffer_length > 1000:
+            #     
+            #     loss = sample_batch_and_calculate_loss(ddqn, replay_buffer, batch_size, gamma)
+            #     ddqn.optimizer.zero_grad()
+            #     loss.backward()
+            #     ddqn.optimizer.step()
 
-                cnt_updates += 1
-                if cnt_updates % tau == 0:
-                    ddqn.update_target_network()
+            #     cnt_updates += 1
+            #     if cnt_updates % tau == 0:
+            #         ddqn.update_target_network()
                 
 
         eps = max(eps - eps_decay, eps_end) # decrease epsilon        
@@ -151,15 +150,16 @@ def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization
 
         print('Episode: {:d}, Total Reward (running avg): {:4.0f} ({:.2f}) Epsilon: {:.3f}, Avg Q: {:.4g}'.format(i, ep_reward, R_avg[-1], eps, np.mean(np.array(q_buffer))))
         
-    torch.save(ddqn.offline_model.state_dict(), "offline_model")
-    torch.save(ddqn.online_model.state_dict(), "online_model")
+        torch.save(ddqn.offline_model.state_dict(), "offline_model")
+        torch.save(ddqn.online_model.state_dict(), "online_model")
+
     return R_buffer, R_avg
 
 
 # Initializations
 num_actions = 2
-num_states = 3
-num_episodes = 500
+num_states = 4
+num_episodes = 5
 batch_size = 128
 gamma = 0.95
 learning_rate = 0.1e-5
