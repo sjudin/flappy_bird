@@ -17,7 +17,7 @@ def eps_greedy_policy(q_values, eps):
     :param eps: probability of taking a uniform random action 
     :return: policy of shape (num actions,)
     '''
-    # YOUR CODE HERE
+
     length = len(q_values)
     if eps == 1:
         policy = 1/length*np.ones([length])
@@ -120,11 +120,8 @@ def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization
             new_state, reward, finish_episode = env.step(curr_action) # take one step in the evironment
             new_state = np.asarray(new_state)[None,:]
             
-            # Assess whether terminal state was reached.
-            nonterminal_to_buffer = not finish_episode
-            
             # Store experienced transition to replay buffer
-            replay_buffer.add(Transition(s=state, a=curr_action, r=reward, next_s=new_state, t=nonterminal_to_buffer))
+            replay_buffer.add(Transition(s=state, a=curr_action, r=reward, next_s=new_state, t=not finish_episode))
 
             state = new_state
             ep_reward += reward
@@ -165,7 +162,7 @@ batch_size = 256
 gamma = 0.95
 learning_rate = 0.1e-5
 
-env = Environment(graphics_enabled=True, sound_enabled=False, moving_pipes=True)
+env = Environment(graphics_enabled=True, sound_enabled=False, moving_pipes=False)
 # Object holding our online / offline Q-Networks
 ddqn = DoubleQLearningModel(device, num_states, num_actions, learning_rate,
         pretrained=True)

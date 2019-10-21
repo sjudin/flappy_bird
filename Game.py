@@ -26,9 +26,6 @@ class FlappyBird:
         # Game clock
         self.fps = 60
 
-        # Bird rectangle for collision detection
-        self.bird_rect = pygame.Rect(self.bird.x, self.bird.y, 50, 30)
-
         # Bird and background images
         # if self.render_graphics:
         #     self.background = pygame.image.load("assets/background.png").convert_alpha()
@@ -78,20 +75,13 @@ class FlappyBird:
     def update_bird(self):
 
         # Move bird and redraw, also update bird rectangle for collision detection
-        old_x, old_y = self.bird.x, self.bird.y
         self.bird.move()
-
-        if self.counter % 1000 == 0:
-            self.bird_rect = pygame.Rect(self.bird.x, self.bird.y, 50, 30)
-        else:
-            self.bird_rect.move_ip(self.bird.x - old_x, self.bird.y - old_y)
-
 
         if self.render_graphics:
             # self.screen.blit(self.background, (0,0))
             self.screen.fill(black)
             # self.screen.fill(colors[random.randint(0, len(colors)-1)])
-            pygame.draw.rect(self.screen, (255, 255, 0), self.bird_rect)
+            pygame.draw.rect(self.screen, (255, 255, 0), self.bird)
             # pygame.draw.rect(self.screen, colors[random.randint(0, len(colors)-1)], self.bird_rect)
 
         
@@ -147,7 +137,7 @@ class FlappyBird:
             
         # Has the birds rectagle collided with any pipes?
         for pipe_rect in self.pipe_rects:
-            if self.bird_rect.collidelist(pipe_rect) > -1:
+            if self.bird.collidelist(pipe_rect) > -1:
                 return True
             
         return False
@@ -203,8 +193,9 @@ class FlappyBird:
 
 
 # Keeps track of bird positions
-class Bird:
-    def __init__(self,x,y,dx,dy, ddx, ddy):
+class Bird(pygame.Rect):
+    def __init__(self, x, y, dx, dy, ddx, ddy):
+        super().__init__(x, y, 50, 30)
         self.x = x
         self.y = y
         self.dx = dx
@@ -213,11 +204,24 @@ class Bird:
         self.ddx = ddx
         self.ddy = ddy
 
+        # We need this to prevent the rect from drifting over time
+        self.counter = 0
+
     def move(self):
+        old_x, old_y = (self.x, self.y)
+
         self.x += self.dx
         self.y += self.dy
         self.dx += self.ddx
         self.dy += self.ddy
+        
+        if self.counter > 1000:
+            super().__init__(self.x, self.y, 50, 30)
+            self.counter = 0
+        else:
+            self.move_ip(self.x - old_x, self.y - old_y)
+
+        self.counter += 1
 
 # Keeps track of pipe position
 class Pipe:
