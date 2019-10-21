@@ -21,7 +21,7 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=2)
+        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=0.6)
 
         # Game clock
         self.fps = 60
@@ -167,11 +167,10 @@ class FlappyBird:
         if self.terminal_state:
             # Bird falls down to signal game over
             # pygame.quit()
-            print(self.state)
             return self.state, 0, True
 
         # Spawn a new pipe every 100 frames
-        if self.counter == 100:
+        if self.counter == 150:
             rand = random.randint(100,450)
             r = random.randint(3,5)
             pipe_pair = PipePair(rand, 3, dy=r) if self.moving_pipes else PipePair(rand, 3, dy=0)
@@ -239,7 +238,7 @@ class Pipe:
 
 class PipePair:
     def __init__(self, centerpos, dx, dy=0, x=None):
-        self.center_offset = 200
+        self.center_offset = 240
         self.x = 1024 if x is None else x
         self.y = centerpos
         self.upper = Pipe(x = self.x, dx = dx, height = centerpos - self.center_offset/2, dy=dy)
@@ -251,3 +250,28 @@ class PipePair:
         self.lower.move()
         self.x -= self.upper.dx
         self.y += self.upper.dy
+
+
+class Environment:
+    """
+    Simple wrapper environment that a RL agent uses to interact with the flappy bird game.
+    inputs:
+        graphics_enabled: Tells the environment if you want to open a window to show the agent playing
+        sound_enabled: Want sound?
+        moving_pipes: with this enabled, the pipes will move up and down to increase difficulty
+    """
+
+    def __init__(self, graphics_enabled=False, sound_enabled=False, moving_pipes=False):
+        self.graphics_enabled = graphics_enabled
+        self.sound_enabled = sound_enabled
+        self.moving_pipes = moving_pipes
+
+        self.env = FlappyBird(graphics_enabled, sound_enabled, moving_pipes)
+
+    def step(self,action):
+        return self.env.step(action)
+
+    def reset(self):
+        del self.env
+        self.env = FlappyBird(self.graphics_enabled, self.sound_enabled, self.moving_pipes)
+        return self.env.state

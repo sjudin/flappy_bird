@@ -73,19 +73,11 @@ class QNetwork(nn.Module):
         self._relu2 = nn.ReLU(inplace=True)
         self._fc_final = nn.Linear(60, self._num_actions)
 
-        # Initialize all bias parameters to 0, according to old Keras implementation
-        nn.init.zeros_(self._fc1.bias)
-        nn.init.zeros_(self._fc2.bias)
-        nn.init.zeros_(self._fc_final.bias)
-        # Initialize final layer uniformly in [-1e-6, 1e-6] range, according to old Keras implementation
-        nn.init.uniform_(self._fc_final.weight, a=-1e-6, b=1e-6)
-
     def forward(self, state):
         h = self._relu1(self._fc1(state))
         h = self._relu2(self._fc2(h))
         q_values = self._fc_final(h)
         return q_values
-
 
 class DoubleQLearningModel(object):
     def __init__(self, device, num_states, num_actions, learning_rate, pretrained=False):
@@ -120,24 +112,11 @@ class DoubleQLearningModel(object):
         :return:
         '''
         batch_size = q_online_curr.shape[0]
-        assert q_online_curr.shape == (batch_size, self._num_actions)
-        assert q_target.shape == (batch_size, )
-        assert a.shape == (batch_size, )
 
         # Select only the Q-values corresponding to the actions taken (loss should only be applied for these)
-        q_online_curr_allactions = q_online_curr
-        q_online_curr = q_online_curr[torch.arange(batch_size),
-                                      a]  # New shape: (batch_size,)
-        assert q_online_curr.shape == (batch_size, )
-        for j in [0, 3, 4]:
-            assert q_online_curr_allactions[j, a[j]] == q_online_curr[j]
-
-        # Make sure that gradient is not back-propagated through Q target
-        assert not q_target.requires_grad
+        q_online_curr = q_online_curr[torch.arange(batch_size), a]  # New shape: (batch_size,)
 
         loss = self._mse(q_online_curr, q_target)
-        assert loss.shape == ()
-
         return loss
 
     def update_target_network(self):
