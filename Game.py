@@ -5,9 +5,10 @@ import random
 black = [0, 0, 0]
 
 class FlappyBird:
-    def __init__(self):
-        self.render_graphics = True
-        self.sound_enabled = False
+    def __init__(self, render_graphics, sound_enabled, moving_pipes):
+        self.render_graphics = render_graphics
+        self.sound_enabled = sound_enabled
+        self.moving_pipes = moving_pipes
         
         if not self.render_graphics:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -18,7 +19,7 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=0.4)
+        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=1)
 
         # Game clock
         self.fps = 60
@@ -39,10 +40,13 @@ class FlappyBird:
         self.pipes = []
         self.pipe_rects = []
 
-        pipe_pair = PipePair(300, 3, dy=1)
+        pipe_pair = PipePair(300, 3, dy=random.randint(-1,1)) if self.moving_pipes else PipePair(300, 3, dy=0)
         self.pipes.append(pipe_pair)
 
-        upper_pipe_rect = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
+        # upper_pipe_rect = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
+        upper_pipe_rect = pygame.Rect(0, 0, pipe_pair.width, self.height)
+        upper_pipe_rect.bottomleft = (pipe_pair.x, pipe_pair.upper.height)
+
         lower_pipe_rect = pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height)
 
         # Append corresponding PipePair rects
@@ -71,15 +75,20 @@ class FlappyBird:
         # self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
         # self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
         # self.state.append([(pipe.x + pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
-        self.state.append([pipe.lower.height-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
-        self.state.append([pipe.upper.height-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        self.state.append([(pipe.y+pipe.center_offset/2)-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        self.state.append([(pipe.y-pipe.center_offset/2)-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
 
     def update_bird(self):
 
         # Move bird and redraw, also update bird rectangle for collision detection
         old_x, old_y = self.bird.x, self.bird.y
         self.bird.move()
-        self.bird_rect.move_ip(self.bird.x - old_x, self.bird.y - old_y)
+
+        if self.counter % 1000 == 0:
+            self.bird_rect = pygame.Rect(self.bird.x, self.bird.y, 50, 30)
+        else:
+            self.bird_rect.move_ip(self.bird.x - old_x, self.bird.y - old_y)
+
 
         if self.render_graphics:
             # self.screen.blit(self.background, (0,0))
@@ -94,6 +103,9 @@ class FlappyBird:
                 self.pipes.remove(pipe_pair)
                 self.pipe_rects.remove(pipe_pair_rects)
                 continue
+
+            if self.height - pipe_pair.y - pipe_pair.center_offset/2 <= 0 or pipe_pair.y - pipe_pair.center_offset/2 <= 0:
+                pipe_pair.upper.dy *= -1
 
             old_x, old_y = pipe_pair.x, pipe_pair.y
             pipe_pair.move()
@@ -123,7 +135,7 @@ class FlappyBird:
                     self.sounds['score'].play()
 
         if self.render_graphics:
-            text = self.font.render(str(self.score), False, black)
+            text = self.font.render(str(self.score), False, (0, 255, 0))
             self.screen.blit(text, (self.width/2,50, 100, 200))
 
     # Keeps track of all conditions for a game over
@@ -157,23 +169,30 @@ class FlappyBird:
         # Update states
         self.state.extend([self.bird.y, self.bird.dy])
         # self.state.append([(pipe.x + pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
-        self.state.append([pipe.lower.height-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
-        self.state.append([pipe.upper.height-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+
+        # self.state.append([pipe.lower.height-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        # self.state.append([pipe.upper.height-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        self.state.append([(pipe.y+pipe.center_offset/2)-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+        self.state.append([(pipe.y-pipe.center_offset/2)-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
 
         # Game over
         self.terminal_state = self.game_over()
         if self.terminal_state:
             # Bird falls down to signal game over
             # pygame.quit()
+            print(self.state)
             return self.state, 0, True
 
         # Spawn a new pipe every 100 frames
         if self.counter == 150:
             rand = random.randint(100,450)
-            pipe_pair = PipePair(rand, 3, dy=1)
+            r = random.randint(-1,1)
+            pipe_pair = PipePair(rand, 3, dy=r) if self.moving_pipes else PipePair(rand, 3, dy=0)
             self.pipes.append(pipe_pair)
 
-            upper_pipe_rect = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
+            # upper_pipe_rect = pygame.Rect(pipe_pair.x, 0, pipe_pair.width, pipe_pair.upper.height)
+            upper_pipe_rect = pygame.Rect(0, 0, pipe_pair.width, self.height)
+            upper_pipe_rect.bottomleft = (pipe_pair.x, pipe_pair.upper.height)
             lower_pipe_rect = pygame.Rect(pipe_pair.x, pipe_pair.lower.height, pipe_pair.width, self.height)
 
             # Append corresponding PipePair rects
@@ -219,13 +238,15 @@ class Pipe:
 
 class PipePair:
     def __init__(self, centerpos, dx, dy=0, x=None):
+        self.center_offset = 240
         self.x = 1024 if x is None else x
-        self.y = 0
-        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - 100, dy=dy)
-        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + 100, dy=dy)
+        self.y = centerpos
+        self.upper = Pipe(x = self.x, dx = dx, height = centerpos - self.center_offset/2, dy=dy)
+        self.lower = Pipe(x = self.x, dx = dx, height = centerpos + self.center_offset/2, dy=dy)
         self.width = self.upper.width
 
     def move(self):
         self.upper.move()
         self.lower.move()
         self.x -= self.upper.dx
+        self.y += self.upper.dy

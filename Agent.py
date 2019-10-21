@@ -3,11 +3,11 @@ import torch.nn
 import itertools
 import sys
 import numpy as np
+import random
 from Environment import Environment
 from collections import namedtuple
 from dqn_model import DoubleQLearningModel, ExperienceReplay
 
-env = Environment()
 device = torch.device("cpu")
 
 def eps_greedy_policy(q_values, eps):
@@ -94,10 +94,10 @@ def sample_batch_and_calculate_loss(ddqn, replay_buffer, batch_size, gamma):
 
 def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization=False, batch_size=64, gamma=.94):        
     Transition = namedtuple("Transition", ["s", "a", "r", "next_s", "t"])
-    eps = 0
+    eps = 0.00
     eps_end = 0.00
     eps_decay = 0
-    tau = 1000
+    tau = 5000
     cnt_updates = 0
     R_buffer = []
     R_avg = []
@@ -139,6 +139,7 @@ def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization
 
             #     cnt_updates += 1
             #     if cnt_updates % tau == 0:
+            #         print("updated target")
             #         ddqn.update_target_network()
                 
 
@@ -159,11 +160,12 @@ def train_loop_ddqn(ddqn, env, replay_buffer, num_episodes, enable_visualization
 # Initializations
 num_actions = 2
 num_states = 4
-num_episodes = 5
-batch_size = 128
+num_episodes = 500
+batch_size = 256
 gamma = 0.95
 learning_rate = 0.1e-5
 
+env = Environment(graphics_enabled=True, sound_enabled=False, moving_pipes=True)
 # Object holding our online / offline Q-Networks
 ddqn = DoubleQLearningModel(device, num_states, num_actions, learning_rate,
         pretrained=True)
