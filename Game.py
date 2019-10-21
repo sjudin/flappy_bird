@@ -4,6 +4,8 @@ import random
 
 black = [0, 0, 0]
 
+colors = [[0,0,0], [255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255], [0, 255, 255], [255, 0, 255], [255, 255, 0]]
+
 class FlappyBird:
     def __init__(self, render_graphics, sound_enabled, moving_pipes):
         self.render_graphics = render_graphics
@@ -19,7 +21,7 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=1)
+        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=2)
 
         # Game clock
         self.fps = 60
@@ -64,17 +66,12 @@ class FlappyBird:
             }
 
         self.counter = 0
-
-        self.terminal_state = False
         self.state = []
 
         # Update states
         self.state.extend([self.bird.y, self.bird.dy])
 
         # Initial set of pipes, (none on screen)
-        # self.state.append([pipe.x-self.bird.x for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
-        # self.state.append([pipe.lower.height-self.bird.y for pipe in self.pipes if pipe.x > self.bird.x][:1][0])
-        # self.state.append([(pipe.x + pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
         self.state.append([(pipe.y+pipe.center_offset/2)-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
         self.state.append([(pipe.y-pipe.center_offset/2)-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
 
@@ -93,7 +90,9 @@ class FlappyBird:
         if self.render_graphics:
             # self.screen.blit(self.background, (0,0))
             self.screen.fill(black)
+            # self.screen.fill(colors[random.randint(0, len(colors)-1)])
             pygame.draw.rect(self.screen, (255, 255, 0), self.bird_rect)
+            # pygame.draw.rect(self.screen, colors[random.randint(0, len(colors)-1)], self.bird_rect)
 
         
 
@@ -112,6 +111,7 @@ class FlappyBird:
             for pipe_pair_rect in pipe_pair_rects:
                 pipe_pair_rect.move_ip(pipe_pair.x - old_x, pipe_pair.y - old_y)
 
+
             if self.render_graphics:
                 # Draw longer part of pipe
                 # self.screen.blit(pygame.transform.scale(self.pipe_image_lower, (75, pipe_pair.upper.height)), \
@@ -125,6 +125,7 @@ class FlappyBird:
                 # Draw pipe collision rects for debugging
                 for rect in pipe_pair_rects:
                     pygame.draw.rect(self.screen, (255, 255, 255), rect)
+                    # pygame.draw.rect(self.screen, colors[random.randint(0, len(colors)-1)], rect)
 
     def update_score(self):
         for pipe_pair in self.pipes:
@@ -168,10 +169,6 @@ class FlappyBird:
 
         # Update states
         self.state.extend([self.bird.y, self.bird.dy])
-        # self.state.append([(pipe.x + pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
-
-        # self.state.append([pipe.lower.height-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
-        # self.state.append([pipe.upper.height-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
         self.state.append([(pipe.y+pipe.center_offset/2)-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
         self.state.append([(pipe.y-pipe.center_offset/2)-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
 
@@ -184,9 +181,9 @@ class FlappyBird:
             return self.state, 0, True
 
         # Spawn a new pipe every 100 frames
-        if self.counter == 150:
+        if self.counter == 100:
             rand = random.randint(100,450)
-            r = random.randint(-1,1)
+            r = random.randint(3,5)
             pipe_pair = PipePair(rand, 3, dy=r) if self.moving_pipes else PipePair(rand, 3, dy=0)
             self.pipes.append(pipe_pair)
 
@@ -238,7 +235,7 @@ class Pipe:
 
 class PipePair:
     def __init__(self, centerpos, dx, dy=0, x=None):
-        self.center_offset = 240
+        self.center_offset = 200
         self.x = 1024 if x is None else x
         self.y = centerpos
         self.upper = Pipe(x = self.x, dx = dx, height = centerpos - self.center_offset/2, dy=dy)
