@@ -8,26 +8,20 @@ from Game import Environment
 from collections import namedtuple
 from dqn_model import DoubleQLearningModel, ExperienceReplay
 
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib import style
-
-style.use('fivethirtyeight')
-
 class Agent:
     def __init__(self, env, pretrained):
         # Parameters
         self.num_actions = 2
-        self.num_states = 4
+        self.num_states = 5
         self.num_episodes = 1000
         self.batch_size = 256
         self.gamma = 0.99
         self.learning_rate = 0.1e-5
         self.device = torch.device("cpu")
 
-        self.eps = 0.000
-        self.eps_end = 0
-        self.eps_decay = 0
+        self.eps = 0.001
+        self.eps_end = 0.01
+        self.eps_decay = 0.001
         self.tau = 1000
 
         self.buffer_size = 1e+6
@@ -156,7 +150,7 @@ class Agent:
 
             print('Episode: {:d}, Total Reward (running avg): {:4.0f} ({:.2f}) Epsilon: {:.3f}, Avg Q: {:.4g}'.format(i, ep_reward, R_avg[-1], eps, np.mean(np.array(q_buffer))))
 
-            self.write_episode_data(i, R_avg[-1], ep_reward)
+            # self.write_episode_data(i, R_avg[-1], ep_reward)
             
             if train:
                 torch.save(self.ddqn.offline_model.state_dict(), "offline_model")

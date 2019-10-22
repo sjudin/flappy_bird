@@ -72,6 +72,8 @@ class FlappyBird:
         self.state.append([(pipe.y+pipe.center_offset/2)-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
         self.state.append([(pipe.y-pipe.center_offset/2)-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
 
+        self.state.append([(pipe.x+pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x+pipe.width) > self.bird.x][:1][0]) # Closest pipe dist to end
+
     def update_bird(self):
 
         # Move bird and redraw, also update bird rectangle for collision detection
@@ -161,6 +163,8 @@ class FlappyBird:
         self.state.extend([self.bird.y, self.bird.dy])
         self.state.append([(pipe.y+pipe.center_offset/2)-(self.bird.y + 30) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
         self.state.append([(pipe.y-pipe.center_offset/2)-(self.bird.y) for pipe in self.pipes if (pipe.x + pipe.width) > self.bird.x][:1][0])
+
+        self.state.append([(pipe.x+pipe.width)-self.bird.x for pipe in self.pipes if (pipe.x+pipe.width) > self.bird.x][:1][0]) # Closest pipe dist to end
 
         # Game over
         self.terminal_state = self.game_over()
