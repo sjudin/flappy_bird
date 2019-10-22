@@ -19,20 +19,20 @@ class Agent:
         # Parameters
         self.num_actions = 2
         self.num_states = 4
-        self.num_episodes = 5000
+        self.num_episodes = 1000
         self.batch_size = 256
         self.gamma = 0.95
         self.learning_rate = 0.1e-5
         self.device = torch.device("cpu")
 
         self.eps = 0.008
-        self.eps_end = 0.00
-        self.eps_decay = 0
+        self.eps_end = 0.001
+        self.eps_decay = 0.0001
         self.tau = 1000
 
-        self.curr_episode = []
-        self.curr_R_avg = []
-        self.curr_R = []
+        self.curr_episode = None
+        self.curr_R_avg = None
+        self.curr_R = None
         self.animate = animate
 
 
@@ -124,7 +124,8 @@ class Agent:
         eps = self.eps
 
         if self.animate:
-            self.fig.show()
+            # self.fig.show()
+            pass
 
         for i in range(self.num_episodes):
             state = np.asarray(self.env.reset()) # Initial state
@@ -134,7 +135,7 @@ class Agent:
             q_buffer = []
             steps = 0
 
-            self.curr_episode.append(i)
+            self.curr_episode = i
             
             while not finish_episode:
                 steps += 1
@@ -169,8 +170,8 @@ class Agent:
             R_avg.append(.05 * R_buffer[i] + .95 * R_avg[i-1]) if i > 0 else R_avg.append(R_buffer[i])
 
             print('Episode: {:d}, Total Reward (running avg): {:4.0f} ({:.2f}) Epsilon: {:.3f}, Avg Q: {:.4g}'.format(i, ep_reward, R_avg[-1], eps, np.mean(np.array(q_buffer))))
-            self.curr_R_avg.append(R_avg[-1])
-            self.curr_R.append(ep_reward)
+            self.curr_R_avg = R_avg[-1]
+            self.curr_R = ep_reward
 
             if self.animate:
                 self.update_plot()
@@ -182,19 +183,21 @@ class Agent:
         return R_buffer, R_avg
 
     def update_plot(self):
-        self.ax1.clear()
-        plot = self.ax1.plot(self.curr_episode, self.curr_R_avg)
-        plot.append(self.ax1.plot(self.curr_episode, self.curr_R, linewidth=1)[0])
-        plot[0].set_label('Average reward')
-        plot[1].set_label('Episodic reward')
-        self.ax1.legend()
-        self.ax1.set_xlabel('Episodes')
-        plt.pause(0.1)
+        with open('agent_plot.csv', mode='a') as file:
+            file.write('{}, {}, {}\n'.format(self.curr_episode, self.curr_R_avg, self.curr_R))
+        # self.ax1.clear()
+        # plot = self.ax1.plot(self.curr_episode, self.curr_R_avg)
+        # plot.append(self.ax1.plot(self.curr_episode, self.curr_R, linewidth=1)[0])
+        # plot[0].set_label('Average reward')
+        # plot[1].set_label('Episodic reward')
+        # self.ax1.legend()
+        # self.ax1.set_xlabel('Episodes')
+        # plt.pause(0.1)
 
 if __name__ == '__main__':
     env = Environment(graphics_enabled=False, sound_enabled=False, moving_pipes=False)
 
-    agent = Agent(env, pretrained=False, animate=True)
+    agent = Agent(env, pretrained=True, animate=True)
     R_avg = 0
 
     _, R_avg = agent.train_ddqn(train=True)
