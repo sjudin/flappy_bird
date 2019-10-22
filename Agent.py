@@ -19,16 +19,16 @@ class Agent:
         # Parameters
         self.num_actions = 2
         self.num_states = 4
-        self.num_episodes = 500
+        self.num_episodes = 5000
         self.batch_size = 256
         self.gamma = 0.95
         self.learning_rate = 0.1e-5
         self.device = torch.device("cpu")
 
-        self.eps = 0.003
+        self.eps = 0.008
         self.eps_end = 0.00
         self.eps_decay = 0
-        self.tau = 5000
+        self.tau = 1000
 
         self.curr_episode = []
         self.curr_R_avg = []
@@ -183,15 +183,18 @@ class Agent:
 
     def update_plot(self):
         self.ax1.clear()
-        self.ax1.plot(self.curr_episode, self.curr_R_avg)
-        self.ax1.plot(self.curr_episode, self.curr_R)
+        plot = self.ax1.plot(self.curr_episode, self.curr_R_avg)
+        plot.append(self.ax1.plot(self.curr_episode, self.curr_R, linewidth=1)[0])
+        plot[0].set_label('Average reward')
+        plot[1].set_label('Episodic reward')
+        self.ax1.legend()
+        self.ax1.set_xlabel('Episodes')
         plt.pause(0.1)
 
 if __name__ == '__main__':
     env = Environment(graphics_enabled=False, sound_enabled=False, moving_pipes=False)
 
-    agent = Agent(env, pretrained=True, animate=True, window=window)
+    agent = Agent(env, pretrained=False, animate=True)
     R_avg = 0
 
-    while R_avg < 2000:
-        _, R_avg = agent.train_ddqn(train=True)
+    _, R_avg = agent.train_ddqn(train=True)
