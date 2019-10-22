@@ -15,31 +15,20 @@ from matplotlib import style
 style.use('fivethirtyeight')
 
 class Agent:
-    def __init__(self, env, pretrained, animate=False):
+    def __init__(self, env, pretrained):
         # Parameters
         self.num_actions = 2
         self.num_states = 4
         self.num_episodes = 1000
         self.batch_size = 256
-        self.gamma = 0.95
+        self.gamma = 0.99
         self.learning_rate = 0.1e-5
         self.device = torch.device("cpu")
 
-        self.eps = 0.008
-        self.eps_end = 0.001
-        self.eps_decay = 0.0001
+        self.eps = 0.000
+        self.eps_end = 0
+        self.eps_decay = 0
         self.tau = 1000
-
-        self.curr_episode = None
-        self.curr_R_avg = None
-        self.curr_R = None
-        self.animate = animate
-
-
-        if animate:
-            self.fig = plt.figure()
-            self.ax1 = self.fig.add_subplot(1,1,1)
-            plt.ion()
 
         self.buffer_size = 1e+6
 
@@ -123,10 +112,6 @@ class Agent:
         R_avg = []
         eps = self.eps
 
-        if self.animate:
-            # self.fig.show()
-            pass
-
         for i in range(self.num_episodes):
             state = np.asarray(self.env.reset()) # Initial state
             state = state[None,:] # Add singleton dimension, to represent as batch of size 1.
@@ -170,11 +155,8 @@ class Agent:
             R_avg.append(.05 * R_buffer[i] + .95 * R_avg[i-1]) if i > 0 else R_avg.append(R_buffer[i])
 
             print('Episode: {:d}, Total Reward (running avg): {:4.0f} ({:.2f}) Epsilon: {:.3f}, Avg Q: {:.4g}'.format(i, ep_reward, R_avg[-1], eps, np.mean(np.array(q_buffer))))
-            self.curr_R_avg = R_avg[-1]
-            self.curr_R = ep_reward
 
-            if self.animate:
-                self.update_plot()
+            self.write_episode_data(i, R_avg[-1], ep_reward)
             
             if train:
                 torch.save(self.ddqn.offline_model.state_dict(), "offline_model")
@@ -182,9 +164,9 @@ class Agent:
 
         return R_buffer, R_avg
 
-    def update_plot(self):
+    def write_episode_data(self, curr_episode, curr_R_avg, curr_R):
         with open('agent_plot.csv', mode='a') as file:
-            file.write('{}, {}, {}\n'.format(self.curr_episode, self.curr_R_avg, self.curr_R))
+            file.write('{}, {}, {}\n'.format(curr_episode, curr_R_avg, curr_R))
         # self.ax1.clear()
         # plot = self.ax1.plot(self.curr_episode, self.curr_R_avg)
         # plot.append(self.ax1.plot(self.curr_episode, self.curr_R, linewidth=1)[0])
@@ -195,9 +177,7 @@ class Agent:
         # plt.pause(0.1)
 
 if __name__ == '__main__':
-    env = Environment(graphics_enabled=False, sound_enabled=False, moving_pipes=False)
+    env = Environment(graphics_enabled=True, sound_enabled=False, moving_pipes=False)
+    agent = Agent(env, pretrained=True)
 
-    agent = Agent(env, pretrained=True, animate=True)
-    R_avg = 0
-
-    _, R_avg = agent.train_ddqn(train=True)
+    _, R_avg = agent.train_ddqn(train=False)

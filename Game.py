@@ -21,7 +21,7 @@ class FlappyBird:
         self.screen = pygame.display.set_mode(self.size)
 
         # Initial bird
-        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=0.6)
+        self.bird = Bird(x=100, y=300, dx=0, dy=0, ddx=0, ddy=1)
 
         # Game clock
         self.fps = 60
@@ -214,7 +214,7 @@ class Bird(pygame.Rect):
         self.dx += self.ddx
         self.dy += self.ddy
         
-        if self.counter > 1000:
+        if self.counter > 100:
             super().__init__(self.x, self.y, 50, 30)
             self.counter = 0
         else:
@@ -238,7 +238,7 @@ class Pipe:
 
 class PipePair:
     def __init__(self, centerpos, dx, dy=0, x=None):
-        self.center_offset = 240
+        self.center_offset = 200
         self.x = 1024 if x is None else x
         self.y = centerpos
         self.upper = Pipe(x = self.x, dx = dx, height = centerpos - self.center_offset/2, dy=dy)
