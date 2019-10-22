@@ -1,3 +1,4 @@
+matplotlib
 asn1crypto==0.24.0
 astroid==2.1.0
 better-exceptions==0.2.2

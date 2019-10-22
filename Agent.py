@@ -8,9 +8,14 @@ from Game import Environment
 from collections import namedtuple
 from dqn_model import DoubleQLearningModel, ExperienceReplay
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib import style
+
+style.use('fivethirtyeight')
 
 class Agent:
-    def __init__(self, env, pretrained):
+    def __init__(self, env, pretrained, animate=False):
         # Parameters
         self.num_actions = 2
         self.num_states = 4
@@ -24,6 +29,17 @@ class Agent:
         self.eps_end = 0.00
         self.eps_decay = 0
         self.tau = 5000
+
+        self.curr_episode = []
+        self.curr_R_avg = []
+        self.curr_R = []
+        self.animate = animate
+
+
+        if animate:
+            self.fig = plt.figure()
+            self.ax1 = self.fig.add_subplot(1,1,1)
+            plt.ion()
 
         self.buffer_size = 1e+6
 
@@ -106,6 +122,10 @@ class Agent:
         R_buffer = []
         R_avg = []
         eps = self.eps
+
+        if self.animate:
+            self.fig.show()
+
         for i in range(self.num_episodes):
             state = np.asarray(self.env.reset()) # Initial state
             state = state[None,:] # Add singleton dimension, to represent as batch of size 1.
@@ -113,6 +133,8 @@ class Agent:
             ep_reward = 0 # Initialize "Episodic reward", i.e. the total reward for episode, when disregarding discount factor.
             q_buffer = []
             steps = 0
+
+            self.curr_episode.append(i)
             
             while not finish_episode:
                 steps += 1
@@ -147,6 +169,11 @@ class Agent:
             R_avg.append(.05 * R_buffer[i] + .95 * R_avg[i-1]) if i > 0 else R_avg.append(R_buffer[i])
 
             print('Episode: {:d}, Total Reward (running avg): {:4.0f} ({:.2f}) Epsilon: {:.3f}, Avg Q: {:.4g}'.format(i, ep_reward, R_avg[-1], eps, np.mean(np.array(q_buffer))))
+            self.curr_R_avg.append(R_avg[-1])
+            self.curr_R.append(ep_reward)
+
+            if self.animate:
+                self.update_plot()
             
             if train:
                 torch.save(self.ddqn.offline_model.state_dict(), "offline_model")
@@ -154,10 +181,16 @@ class Agent:
 
         return R_buffer, R_avg
 
+    def update_plot(self):
+        self.ax1.clear()
+        self.ax1.plot(self.curr_episode, self.curr_R_avg)
+        self.ax1.plot(self.curr_episode, self.curr_R)
+        plt.pause(0.1)
+
 if __name__ == '__main__':
     env = Environment(graphics_enabled=False, sound_enabled=False, moving_pipes=False)
 
-    agent = Agent(env, pretrained=True)
+    agent = Agent(env, pretrained=True, animate=True, window=window)
     R_avg = 0
 
     while R_avg < 2000:
